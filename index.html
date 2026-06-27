@@ -1234,7 +1234,14 @@
     showToast('Combo added to cart! 🌙');
   }
 
+  let lastOrderTime = 0;
+
   function placeOrder() {
+    const now = Date.now();
+    if (now - lastOrderTime < 30000) {
+      showToast('Please wait 30 seconds before ordering again');
+      return;
+    }
     if (cart.length === 0) { showToast('Add something first!'); return; }
 
     const name = document.getElementById('customerName').value.trim();
@@ -1297,6 +1304,7 @@
     }
 
     // Show confirmation with order number
+    lastOrderTime = Date.now();
     showConfirmation(name, total, selectedPayment, orderNumber);
     showToast('Order sent! ✓');
   }
@@ -1333,7 +1341,7 @@
   // Initialize EmailJS once at page load
   emailjs.init('7WVH18CE_A1tlxH4z');
 
-  const OWNER_PASS = 'Zaynadream';
+  const OWNER_PASS_HASH = '335c4d929816ba4b5f35c9e1944d20970530c627430f8c7c6375f95d45c1f265';
   const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/6a3fcf94da38895dfe076f27';
   const JSONBIN_KEY = '$2a$10$9..3XAva0NLCS0EZH7k8W.ezt8f8j13J4Cwtte.sYVWJhTMeE1JgO';
 
@@ -1369,9 +1377,14 @@
     if (isOpen) document.getElementById('statusToggle').checked = true;
   });
 
-  function submitOwnerPassword() {
+  async function submitOwnerPassword() {
     const input = document.getElementById('ownerPassword').value;
-    if (input === OWNER_PASS) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    if (inputHash === OWNER_PASS_HASH) {
       document.getElementById('ownerModal').style.display = 'none';
       document.getElementById('ownerPassword').value = '';
       document.getElementById('ownerError').style.display = 'none';
