@@ -137,10 +137,74 @@
     animation: pulse 2s infinite;
   }
 
+  .hours-badge .dot.closed {
+    background: #ff4444;
+    animation: none;
+  }
+
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
   }
+
+  /* OPEN/CLOSED TOGGLE */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--lightgray);
+  }
+
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toggle {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    cursor: pointer;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #333;
+    border-radius: 26px;
+    transition: background 0.2s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+  }
+
+  .toggle input:checked + .toggle-slider { background: var(--green); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+  .status-label {
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .status-label.open { color: var(--green); }
+  .status-label.closed { color: #ff4444; }
 
   /* MENU */
   .menu-section {
@@ -162,6 +226,61 @@
   .menu-group {
     margin-bottom: 36px;
   }
+
+  /* SOLD OUT */
+  .sold-out-badge {
+    background: #ff4444;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-left: 8px;
+  }
+
+  .item-card.sold-out {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .item-card.sold-out .add-btn {
+    background: #1a1a1a;
+    color: #444;
+    cursor: not-allowed;
+  }
+
+  /* OWNER PANEL ITEMS */
+  .owner-items {
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  .owner-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #1a1a1a;
+    font-size: 13px;
+    color: var(--lightgray);
+  }
+
+  .owner-item-row:last-child { border-bottom: none; }
+
+  .owner-item-name { font-weight: 600; color: var(--white); }
+
+  .owner-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .owner-item-status { color: var(--green); }
+  .owner-item-status.sold-out { color: #ff4444; }
 
   /* ITEM CARD */
   .item-card {
@@ -403,6 +522,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 20px;
+    max-height: 30vh;
   }
 
   .cart-empty {
@@ -457,6 +577,8 @@
   .cart-footer {
     padding: 20px;
     border-top: 1px solid var(--border);
+    overflow-y: auto;
+    max-height: 60vh;
   }
 
   .cart-total {
@@ -694,6 +816,7 @@
     .cart-drawer { max-width: 100%; }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -709,10 +832,77 @@
 <div class="hero">
   <div class="hero-title">Late Night Eats</div>
   <div class="hero-sub">Caribbean Flavor · Wayne, NE</div>
-  <div class="hours-badge">
-    <span class="dot"></span>
-    Open Thu – Sat &nbsp;·&nbsp; 8 PM – 2 AM
+  <div class="hours-badge" id="hoursBadge">
+    <span class="dot" id="statusDot"></span>
+    <span id="hoursText">Open Thu – Sat &nbsp;·&nbsp; 8 PM – 2 AM</span>
   </div>
+  <a href="https://instagram.com/eatgioskitchen" target="_blank" style="display:inline-flex; align-items:center; gap:6px; margin-top:12px; background:#1a1a1a; border:1px solid #222; border-radius:20px; padding:6px 16px; font-size:12px; color:#999; text-decoration:none; transition:all 0.15s;" onmouseover="this.style.borderColor='#E1306C';this.style.color='#E1306C'" onmouseout="this.style.borderColor='#222';this.style.color='#999'">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+    @eatgioskitchen
+  </a>
+</div>
+
+<!-- OWNER LOGIN MODAL -->
+<div id="ownerModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:400; align-items:center; justify-content:center;">
+  <div style="background:#111; border:1px solid #333; border-radius:12px; padding:32px 28px; width:90%; max-width:320px; text-align:center;">
+    <div style="font-family:Bebas Neue,sans-serif; font-size:28px; letter-spacing:2px; margin-bottom:4px;">Owner Panel</div>
+    <div style="font-size:12px; color:#666; margin-bottom:20px;">Enter password to manage kitchen status</div>
+    <input id="ownerPassword" type="password" placeholder="Password" style="width:100%; background:#1a1a1a; border:1px solid #333; color:#fff; padding:12px 14px; border-radius:4px; font-size:14px; font-family:Inter,sans-serif; outline:none; margin-bottom:10px;" />
+    <div id="ownerError" style="color:#ff4444; font-size:12px; margin-bottom:10px; display:none;">Wrong password</div>
+    <button onclick="submitOwnerPassword()" style="width:100%; background:#FFD700; color:#000; border:none; padding:12px; border-radius:4px; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:8px;">Enter</button>
+    <button onclick="closeOwnerModal()" style="width:100%; background:transparent; color:#666; border:1px solid #333; padding:10px; border-radius:4px; font-size:13px; cursor:pointer;">Cancel</button>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="statusBar" style="display:none;">
+  <span>Kitchen Status:</span>
+  <label class="toggle">
+    <input type="checkbox" id="statusToggle" onchange="toggleStatus()" />
+    <span class="toggle-slider"></span>
+  </label>
+  <span class="status-label closed" id="statusLabel">Closed</span>
+  <button onclick="lockOwner()" style="margin-left:12px; background:transparent; border:1px solid #333; color:#666; padding:4px 10px; border-radius:4px; font-size:11px; cursor:pointer;">Lock</button>
+</div>
+
+<!-- OWNER ITEM TOGGLES -->
+<div class="owner-items" id="ownerItems" style="display:none; padding: 12px 20px; background:#111; border-bottom:1px solid #222;">
+  <div style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#555; margin-bottom:10px;">Item Availability</div>
+  <div class="owner-item-row">
+    <span class="owner-item-name">🫓 Brazilian Pastel</span>
+    <div class="owner-toggle-wrap">
+      <span class="owner-item-status" id="status-pastel">Available</span>
+      <label class="toggle"><input type="checkbox" id="toggle-pastel" checked onchange="toggleItem('pastel', this)"><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+  <div class="owner-item-row">
+    <span class="owner-item-name">✨ Golden Bites</span>
+    <div class="owner-toggle-wrap">
+      <span class="owner-item-status" id="status-golden">Available</span>
+      <label class="toggle"><input type="checkbox" id="toggle-golden" checked onchange="toggleItem('golden', this)"><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+  <div class="owner-item-row">
+    <span class="owner-item-name">🧀 Nachos</span>
+    <div class="owner-toggle-wrap">
+      <span class="owner-item-status" id="status-nachos">Available</span>
+      <label class="toggle"><input type="checkbox" id="toggle-nachos" checked onchange="toggleItem('nachos', this)"><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+  <div class="owner-item-row">
+    <span class="owner-item-name">🍗 Island Chicken Leg</span>
+    <div class="owner-toggle-wrap">
+      <span class="owner-item-status" id="status-chicken">Available</span>
+      <label class="toggle"><input type="checkbox" id="toggle-chicken" checked onchange="toggleItem('chicken', this)"><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+
+</div>
+
+<!-- CLOSED BANNER -->
+<div id="closedBanner" style="display:none; background:#1a0a00; border-bottom:1px solid #ff6b00; padding:12px 24px; align-items:center; justify-content:center; gap:10px; text-align:center;">
+  <span style="font-size:16px;">🕐</span>
+  <span style="font-size:13px; color:#ffaa55;">We're currently closed — orders will be prepared next open night (Thu–Sat, 8PM–2AM)</span>
 </div>
 
 <!-- MENU -->
@@ -722,17 +912,17 @@
   <div class="menu-group">
     <div class="section-label">Brazilian Pastel</div>
 
-    <div class="item-card">
+    <div class="item-card" id="card-pastel">
       <div class="item-header">
-        <div class="item-name">🫓 Brazilian Pastel</div>
-        <div class="item-price">$2</div>
+        <div class="item-name">🫓 Brazilian Pastel <span class="sold-out-badge" id="badge-pastel" style="display:none;">Sold Out</span></div>
+        <div class="item-price" id="pastel-price">$2</div>
       </div>
       <div class="item-desc">Crispy fried pastry, made fresh every night. Pick your filling.</div>
       <div class="variant-label">Choose filling</div>
       <div class="variants" id="pastel-variants">
-        <button class="variant-btn" onclick="selectVariant('pastel', '🧀 Cheese', this)">🧀 Cheese</button>
-        <button class="variant-btn" onclick="selectVariant('pastel', '🥩 Meat', this)">🥩 Meat</button>
-        <button class="variant-btn" onclick="selectVariant('pastel', '🐟 Tuna', this)">🐟 Tuna</button>
+        <button class="variant-btn" onclick="selectVariant('pastel', '🧀 Cheese', this, 2)">🧀 Cheese — $2</button>
+        <button class="variant-btn" onclick="selectVariant('pastel', '🥩 Meat', this, 3)">🥩 Meat — $3</button>
+        <button class="variant-btn" onclick="selectVariant('pastel', '🐟 Tuna', this, 3)">🐟 Tuna — $3</button>
       </div>
       <div class="item-footer">
         <div class="qty-control">
@@ -749,16 +939,16 @@
   <div class="menu-group">
     <div class="section-label">Golden Bites</div>
 
-    <div class="item-card">
+    <div class="item-card" id="card-golden">
       <div class="item-header">
-        <div class="item-name">✨ Golden Bites</div>
-        <div class="item-price">$2</div>
+        <div class="item-name">✨ Golden Bites <span class="sold-out-badge" id="badge-golden" style="display:none;">Sold Out</span></div>
+        <div class="item-price" id="golden-price">$2</div>
       </div>
       <div class="item-desc">Soft, golden fried dough — sweet & satisfying. Pick your style.</div>
       <div class="variant-label">Choose style</div>
       <div class="variants" id="golden-variants">
-        <button class="variant-btn" onclick="selectVariant('golden', '🧀 Cheese', this)">🧀 Cheese</button>
-        <button class="variant-btn" onclick="selectVariant('golden', '🧀🥩 Ham & Cheese', this)">🧀🥩 Ham & Cheese</button>
+        <button class="variant-btn" onclick="selectVariant('golden', '🧀 Cheese', this, 2)">🧀 Cheese — $2</button>
+        <button class="variant-btn" onclick="selectVariant('golden', '🧀🥩 Ham & Cheese', this, 3)">🧀🥩 Ham & Cheese — $3</button>
       </div>
       <div class="item-footer">
         <div class="qty-control">
@@ -775,9 +965,9 @@
   <div class="menu-group">
     <div class="section-label">Nachos</div>
 
-    <div class="item-card">
+    <div class="item-card" id="card-nachos">
       <div class="item-header">
-        <div class="item-name">🧀 Nachos</div>
+        <div class="item-name">🧀 Nachos <span class="sold-out-badge" id="badge-nachos" style="display:none;">Sold Out</span></div>
         <div class="item-price">$4</div>
       </div>
       <div class="item-desc">Chips, seasoned meat & melted cheese.</div>
@@ -792,6 +982,27 @@
     </div>
   </div>
 
+  <!-- ISLAND CHICKEN -->
+  <div class="menu-group">
+    <div class="section-label">Island Chicken</div>
+
+    <div class="item-card" id="card-chicken">
+      <div class="item-header">
+        <div class="item-name">🍗 Island Chicken Leg <span class="sold-out-badge" id="badge-chicken" style="display:none;">Sold Out</span></div>
+        <div class="item-price">$3.50</div>
+      </div>
+      <div class="item-desc">Tender oven-baked chicken leg seasoned with bold Caribbean herbs and spices, roasted until juicy and full of flavor.</div>
+      <div class="item-footer">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty('chicken', -1)">−</button>
+          <div class="qty-num" id="chicken-qty">1</div>
+          <button class="qty-btn" onclick="changeQty('chicken', 1)">+</button>
+        </div>
+        <button class="add-btn" onclick="addToCart('chicken', 'Island Chicken Leg', 3.50)">Add to Order</button>
+      </div>
+    </div>
+  </div>
+
   <!-- COMBO -->
   <div class="menu-group">
     <div class="section-label">Deal</div>
@@ -799,7 +1010,7 @@
     <div class="combo-card">
       <div class="combo-tag">🌙 Late Night Combo</div>
       <div class="combo-name">2 Pastels + Nachos</div>
-      <div class="combo-desc">Two Brazilian Pastels of your choice + one Nachos</div>
+      <div class="combo-desc">Two Cheese Brazilian Pastels + one Nachos</div>
       <div class="combo-save">↓ Save $1 — eat good, sleep happy</div>
       <div class="item-footer">
         <div class="qty-control">
@@ -807,7 +1018,7 @@
           <div class="qty-num" id="combo-qty">1</div>
           <button class="qty-btn" onclick="changeQty('combo', 1)">+</button>
         </div>
-        <button class="add-btn" onclick="addToCart('combo', 'Late Night Combo', 7)">Add to Order</button>
+        <button class="add-btn" onclick="addCombo()">Add to Order</button>
       </div>
     </div>
   </div>
@@ -834,7 +1045,18 @@
       <div class="cart-total-amount" id="cartTotal">$0</div>
     </div>
     <div class="order-form">
-      <input class="form-input" type="text" id="customerName" placeholder="Your name" />
+      <input class="form-input" type="text" id="customerName" placeholder="Your name *" />
+      <input class="form-input" type="tel" id="customerPhone" placeholder="Phone number (optional)" />
+      <input class="form-input" type="email" id="customerEmail" placeholder="Email (optional)" />
+      <div style="font-size:11px; color:#555; text-align:center; margin-top:-4px;">Fill at least one contact so we can confirm your order</div>
+      <input class="form-input" type="text" id="pickupTime" placeholder="Pickup time (e.g. 9:30PM)" />
+      <div style="display:flex; align-items:center; gap:10px; background:#1a1a1a; border:1px solid #222; border-radius:4px; padding:12px 14px;">
+        <input type="checkbox" id="requestDelivery" style="width:16px; height:16px; accent-color:#FFD700; cursor:pointer;" />
+        <div>
+          <div style="font-size:13px; font-weight:600; color:#fff;">Request Delivery</div>
+          <div style="font-size:11px; color:#555; margin-top:2px;">Delivery availability varies — we'll confirm via text</div>
+        </div>
+      </div>
       <div class="pay-label">How are you paying?</div>
       <div class="pay-options">
         <button class="pay-opt" id="pay-venmo" onclick="selectPayment('venmo', this)">💜 Venmo</button>
@@ -851,6 +1073,7 @@
   <div class="confirm-box">
     <div class="confirm-check">✓</div>
     <div class="confirm-title">Order Sent!</div>
+    <div id="confirmOrderNum" style="font-size:12px; letter-spacing:2px; color:#FFD700; margin-bottom:4px;"></div>
     <div class="confirm-sub">Complete your payment below</div>
     <div class="confirm-amount" id="confirmAmount">$0</div>
 
@@ -881,14 +1104,20 @@
 <script>
   const PHONE = '+14023699247';
   let cart = [];
-  let qtys = { pastel: 1, golden: 1, nachos: 1, combo: 1 };
+  let qtys = { pastel: 1, golden: 1, nachos: 1, combo: 1, chicken: 1 };
   let selectedVariants = { pastel: null, golden: null };
 
-  function selectVariant(item, variant, btn) {
+  let variantPrices = { pastel: 2, golden: 2 };
+
+  function selectVariant(item, variant, btn, price) {
     selectedVariants[item] = variant;
+    variantPrices[item] = price;
     const container = document.getElementById(item + '-variants');
     container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
+    // Update price display
+    const priceEl = document.getElementById(item + '-price');
+    if (priceEl) priceEl.textContent = '$' + price;
   }
 
   function changeQty(item, delta) {
@@ -901,6 +1130,11 @@
     if (needsVariant && !selectedVariants[itemKey]) {
       showToast('Please choose a filling first!');
       return;
+    }
+
+    // Use variant-specific price if applicable
+    if (['pastel', 'golden'].includes(itemKey)) {
+      price = variantPrices[itemKey];
     }
 
     const variant = selectedVariants[itemKey] || null;
@@ -971,29 +1205,103 @@
     btn.classList.add('selected');
   }
 
+  // Generate order number
+  function generateOrderNumber() {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    return 'GK-' + num;
+  }
+
+  // Auto-build combo
+  function addCombo() {
+    const existing_cheese = cart.find(c => c.label === 'Brazilian Pastel (🧀 Cheese)');
+    if (existing_cheese) {
+      existing_cheese.qty += 2;
+    } else {
+      cart.push({ label: 'Brazilian Pastel (🧀 Cheese)', price: 2, qty: 2 });
+    }
+    const existing_nachos = cart.find(c => c.label === 'Nachos');
+    if (existing_nachos) {
+      existing_nachos.qty += 1;
+    } else {
+      cart.push({ label: 'Nachos', price: 4, qty: 1 });
+    }
+    // Apply $1 discount
+    const discountExists = cart.find(c => c.label === '🌙 Combo Discount');
+    if (!discountExists) {
+      cart.push({ label: '🌙 Combo Discount', price: -1, qty: 1 });
+    }
+    updateCartUI();
+    showToast('Combo added to cart! 🌙');
+  }
+
   function placeOrder() {
     if (cart.length === 0) { showToast('Add something first!'); return; }
 
     const name = document.getElementById('customerName').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const email = document.getElementById('customerEmail').value.trim();
+
     if (!name) { showToast('Enter your name first'); return; }
+    if (!phone && !email) { showToast('Enter a phone number or email'); return; }
     if (!selectedPayment) { showToast('Choose a payment method'); return; }
 
+    const orderNumber = generateOrderNumber();
     const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
     const itemLines = cart.map(c => `• ${c.label} x${c.qty} = $${c.price * c.qty}`).join('\n');
     const payLabel = selectedPayment === 'venmo' ? 'Venmo' : selectedPayment === 'cashapp' ? 'Cash App' : 'Cash on Pickup';
+    const contact = phone || email;
 
-    const msg = `🛍️ NEW ORDER - Gio's Kitchen\n\nName: ${name}\n\n${itemLines}\n\nTotal: $${total}\nPayment: ${payLabel}`;
+    const pickupTime = document.getElementById('pickupTime').value.trim();
+    const delivery = document.getElementById('requestDelivery').checked;
+    const pickupLine = pickupTime ? `Pickup Time: ${pickupTime}` : 'Pickup Time: Not specified';
+    const deliveryLine = delivery ? '🚗 DELIVERY REQUESTED' : '📍 Pickup';
 
-    // Send order via SMS
+    const msg = `🛍️ NEW ORDER ${orderNumber} - Gio's Kitchen\n\nName: ${name}\nContact: ${contact}\n${pickupLine}\n${deliveryLine}\n\n${itemLines}\n\nTotal: $${total}\nPayment: ${payLabel}`;
+
+    // Send via SMS
     const smsURL = `sms:${PHONE}?body=${encodeURIComponent(msg)}`;
     window.open(smsURL, '_blank');
 
-    // Show confirmation screen
-    showConfirmation(name, total, selectedPayment);
+    // Send owner email via EmailJS
+    emailjs.send('service_sjal2fj', 'template_awg64yi', {
+      customer_name: name,
+      customer_contact: contact,
+      payment_method: payLabel,
+      order_items: itemLines,
+      order_total: '$' + total,
+      pickup_time: pickupTime || 'Not specified',
+      delivery_request: delivery ? 'Yes - Delivery Requested' : 'No - Pickup',
+      order_number: orderNumber
+    }).then(response => {
+      console.log('Owner email sent:', response.status);
+    }).catch(err => {
+      console.log('Owner email error:', err.status, err.text);
+    });
+
+    // Send customer receipt if they provided email
+    if (email) {
+      emailjs.send('service_sjal2fj', 'template_awg64yi', {
+        customer_name: name,
+        customer_contact: email,
+        payment_method: payLabel,
+        order_items: itemLines,
+        order_total: '$' + total,
+        pickup_time: pickupTime || 'Not specified',
+        delivery_request: delivery ? 'Yes - Delivery Requested' : 'No - Pickup',
+        order_number: orderNumber
+      }).then(() => {
+        console.log('Customer receipt sent');
+      }).catch(err => {
+        console.log('Customer receipt error:', err.status);
+      });
+    }
+
+    // Show confirmation with order number
+    showConfirmation(name, total, selectedPayment, orderNumber);
     showToast('Order sent! ✓');
   }
 
-  function showConfirmation(name, total, method) {
+  function showConfirmation(name, total, method, orderNumber) {
     const overlay = document.getElementById('confirmOverlay');
     const amountEl = document.getElementById('confirmAmount');
     const venmoBox = document.getElementById('confirmVenmo');
@@ -1001,6 +1309,8 @@
     const cashBox = document.getElementById('confirmCash');
 
     amountEl.textContent = '$' + total;
+    const orderNumEl = document.getElementById('confirmOrderNum');
+    if (orderNumEl && orderNumber) orderNumEl.textContent = 'Order ' + orderNumber;
     venmoBox.style.display = method === 'venmo' ? 'block' : 'none';
     cashappBox.style.display = method === 'cashapp' ? 'block' : 'none';
     cashBox.style.display = method === 'cash' ? 'block' : 'none';
@@ -1018,6 +1328,136 @@
   function closeConfirmation() {
     document.getElementById('confirmOverlay').classList.remove('open');
     toggleCart();
+  }
+
+  // Initialize EmailJS once at page load
+  emailjs.init('7WVH18CE_A1tlxH4z');
+
+  const OWNER_PASS = 'Zaynadream';
+  const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/6a3fcf94da38895dfe076f27';
+  const JSONBIN_KEY = '$2a$10$9..3XAva0NLCS0EZH7k8W.ezt8f8j13J4Cwtte.sYVWJhTMeE1JgO';
+
+  async function syncStatusOnline(isOpen) {
+    try {
+      await fetch(JSONBIN_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+        body: JSON.stringify({ isOpen })
+      });
+    } catch(e) { console.log('Sync failed, using local only'); }
+  }
+
+  async function fetchStatusOnline() {
+    try {
+      const res = await fetch(JSONBIN_URL, {
+        headers: { 'X-Master-Key': JSONBIN_KEY }
+      });
+      const data = await res.json();
+      return data.record.isOpen;
+    } catch(e) { return null; }
+  }
+  let ownerUnlocked = false;
+
+  window.addEventListener('load', () => {
+    // Check if owner mode via URL hash
+    if (window.location.hash === '#owner') {
+      document.getElementById('ownerModal').style.display = 'flex';
+    }
+    // Load saved status from localStorage
+    const isOpen = localStorage.getItem('kitchenOpen') !== 'false';
+    applyStatus(isOpen);
+    if (isOpen) document.getElementById('statusToggle').checked = true;
+  });
+
+  function submitOwnerPassword() {
+    const input = document.getElementById('ownerPassword').value;
+    if (input === OWNER_PASS) {
+      document.getElementById('ownerModal').style.display = 'none';
+      document.getElementById('ownerPassword').value = '';
+      document.getElementById('ownerError').style.display = 'none';
+      ownerUnlocked = true;
+      document.getElementById('statusBar').style.display = 'flex';
+      document.getElementById('ownerItems').style.display = 'block';
+      // Sync toggle to current status
+      const isOpen = localStorage.getItem('kitchenOpen') !== 'false';
+      document.getElementById('statusToggle').checked = isOpen;
+      const label = document.getElementById('statusLabel');
+      label.textContent = isOpen ? 'Open' : 'Closed';
+      label.className = isOpen ? 'status-label open' : 'status-label closed';
+    } else {
+      document.getElementById('ownerError').style.display = 'block';
+    }
+  }
+
+  function closeOwnerModal() {
+    document.getElementById('ownerModal').style.display = 'none';
+    document.getElementById('ownerPassword').value = '';
+    document.getElementById('ownerError').style.display = 'none';
+    // Remove hash
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  function lockOwner() {
+    ownerUnlocked = false;
+    document.getElementById('statusBar').style.display = 'none';
+    document.getElementById('ownerItems').style.display = 'none';
+    history.replaceState(null, '', window.location.pathname);
+    showToast('Owner panel locked 🔒');
+  }
+
+  function toggleStatus() {
+    const isOpen = document.getElementById('statusToggle').checked;
+    localStorage.setItem('kitchenOpen', isOpen);
+    applyStatus(isOpen);
+    syncStatusOnline(isOpen);
+    showToast(isOpen ? 'Kitchen is now Open 🟢' : 'Kitchen is now Closed 🔴');
+  }
+
+  // Allow Enter key on password field
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('ownerPassword').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitOwnerPassword();
+    });
+  });
+
+  function applyStatus(isOpen) {
+    const label = document.getElementById('statusLabel');
+    const banner = document.getElementById('closedBanner');
+    const dot = document.getElementById('statusDot');
+    const hoursText = document.getElementById('hoursText');
+
+    if (isOpen) {
+      label.textContent = 'Open';
+      label.className = 'status-label open';
+      if (banner) banner.style.display = 'none';
+      if (dot) dot.classList.remove('closed');
+      if (hoursText) hoursText.innerHTML = 'Open Thu – Sat &nbsp;·&nbsp; 8 PM – 2 AM';
+    } else {
+      label.textContent = 'Closed';
+      label.className = 'status-label closed';
+      if (banner) banner.style.display = 'flex';
+      if (dot) dot.classList.add('closed');
+      if (hoursText) hoursText.innerHTML = 'Currently Closed';
+    }
+  }
+
+  function toggleItem(item, checkbox) {
+    const isAvailable = checkbox.checked;
+    const card = document.getElementById('card-' + item);
+    const badge = document.getElementById('badge-' + item);
+    const status = document.getElementById('status-' + item);
+    localStorage.setItem('item-' + item, isAvailable);
+    if (isAvailable) {
+      card.classList.remove('sold-out');
+      badge.style.display = 'none';
+      status.textContent = 'Available';
+      status.className = 'owner-item-status';
+    } else {
+      card.classList.add('sold-out');
+      badge.style.display = 'inline-block';
+      status.textContent = 'Sold Out';
+      status.className = 'owner-item-status sold-out';
+    }
   }
 
   function showToast(msg) {
