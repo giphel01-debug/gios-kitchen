@@ -708,6 +708,22 @@
   .form-input:focus { border-color: var(--gold); }
   .form-input::placeholder { color: var(--gray); }
 
+  .tip-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--lightgray);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tip-btn:hover { border-color: var(--gold); color: var(--white); }
+  .tip-btn.selected { background: var(--gold); border-color: var(--gold); color: var(--black); }
+
   .order-btn {
     background: var(--gold);
     color: var(--black);
@@ -955,6 +971,18 @@
   <span style="font-size:13px; color:#ffaa55;">We're currently closed — orders will be prepared next open night (Thu–Sat, 8PM–2AM)</span>
 </div>
 
+<!-- UNDER CONSTRUCTION BANNER -->
+<div id="constructionBanner" style="display:none; background:#1a0a00; border-bottom:1px solid #ff6b00; padding:12px 24px; align-items:center; justify-content:center; gap:10px; text-align:center;">
+  <span style="font-size:16px;">🚧</span>
+  <span style="font-size:13px; color:#ffaa55; font-weight:600;">Site under construction — check back soon!</span>
+</div>
+
+<!-- ORDERS PAUSED BANNER -->
+<div id="ordersPausedBanner" style="display:none; background:#1a0000; border-bottom:1px solid #ff4444; padding:12px 24px; align-items:center; justify-content:center; gap:10px; text-align:center;">
+  <span style="font-size:16px;">⏸️</span>
+  <span style="font-size:13px; color:#ff8888; font-weight:600;">Orders are temporarily paused — check back shortly!</span>
+</div>
+
 <!-- MENU -->
 <div class="menu-section">
 
@@ -1141,6 +1169,18 @@
           <div style="font-size:11px; color:#555; margin-top:2px;">Delivery availability varies — we'll confirm via text</div>
         </div>
       </div>
+
+      <div style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#555; margin-top:4px;">Add a Tip (optional)</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="tip-btn" onclick="setTip(0, this)">No Tip</button>
+        <button class="tip-btn" onclick="setTip(1, this)">$1</button>
+        <button class="tip-btn" onclick="setTip(2, this)">$2</button>
+        <button class="tip-btn" onclick="setTip(3, this)">$3</button>
+        <button class="tip-btn" onclick="setTip(5, this)">$5</button>
+      </div>
+      <input class="form-input" type="number" id="customTip" placeholder="Custom tip amount ($)" min="0" step="0.50" onchange="setCustomTip(this.value)" />
+
+      <textarea class="form-input" id="orderNotes" placeholder="Special requests or notes (optional)" style="resize:none; height:70px; font-family:Inter,sans-serif;"></textarea>
       <div class="pay-label">How are you paying?</div>
       <div class="pay-options">
         <button class="pay-opt" id="pay-venmo" onclick="selectPayment('venmo', this)">💜 Venmo</button>
@@ -1192,6 +1232,19 @@
   let selectedVariants = { pastel: null, golden: null };
 
   let variantPrices = { pastel: 2, golden: 2, chicken: 3.50 };
+  let tipAmount = 0;
+
+  function setTip(amount, btn) {
+    tipAmount = amount;
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('customTip').value = '';
+  }
+
+  function setCustomTip(value) {
+    tipAmount = parseFloat(value) || 0;
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('selected'));
+  }
 
   // Nacho customization state
   let nachoChip = null;
@@ -1433,7 +1486,9 @@
     if (!selectedPayment) { showToast('Choose a payment method'); return; }
 
     const orderNumber = generateOrderNumber();
-    const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
+    const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+    const total = subtotal + tipAmount;
+    const notes = document.getElementById('orderNotes').value.trim();
     const itemLines = cart.map(c => `• ${c.label} x${c.qty} = $${c.price * c.qty}`).join('\n');
     const payLabel = selectedPayment === 'venmo' ? 'Venmo' : selectedPayment === 'cashapp' ? 'Cash App' : 'Cash on Pickup';
     const contact = phone || email;
@@ -1443,7 +1498,9 @@
     const pickupLine = pickupTime ? `Pickup Time: ${pickupTime}` : 'Pickup Time: Not specified';
     const deliveryLine = delivery ? '🚗 DELIVERY REQUESTED' : '📍 Pickup';
 
-    const msg = `🛍️ NEW ORDER ${orderNumber} - Gio's Kitchen\n\nName: ${name}\nContact: ${contact}\n${pickupLine}\n${deliveryLine}\n\n${itemLines}\n\nTotal: $${total}\nPayment: ${payLabel}`;
+    const tipLine = tipAmount > 0 ? `Tip: $${tipAmount.toFixed(2)}` : 'Tip: None';
+    const notesLine = notes ? `Notes: ${notes}` : '';
+    const msg = `🛍️ NEW ORDER ${orderNumber} - Gio's Kitchen\n\nName: ${name}\nContact: ${contact}\n${pickupLine}\n${deliveryLine}\n${notesLine ? notesLine + '\n' : ''}\n${itemLines}\n\nSubtotal: $${subtotal.toFixed(2)}\n${tipLine}\nTotal: $${total.toFixed(2)}\nPayment: ${payLabel}`;
 
     // Send via SMS
     const smsURL = `sms:${PHONE}?body=${encodeURIComponent(msg)}`;
@@ -1458,7 +1515,9 @@
       order_total: '$' + total,
       pickup_time: pickupTime || 'Not specified',
       delivery_request: delivery ? 'Yes - Delivery Requested' : 'No - Pickup',
-      order_number: orderNumber
+      order_number: orderNumber,
+      tip_amount: tipAmount > 0 ? '$' + tipAmount.toFixed(2) : 'No tip',
+      order_notes: notes || 'None'
     }).then(response => {
       console.log('Owner email sent:', response.status);
     }).catch(err => {
@@ -1482,6 +1541,25 @@
         console.log('Customer receipt error:', err.status);
       });
     }
+
+    // Save to Supabase
+    saveOrderToSupabase({
+      order_number: orderNumber,
+      customer_name: name,
+      customer_contact: contact,
+      items: itemLines,
+      total: '$' + total,
+      payment_method: payLabel,
+      pickup_time: pickupTime || 'Not specified',
+      delivery_request: delivery ? 'Yes - Delivery Requested' : 'No - Pickup',
+      status: 'Pending'
+    });
+
+    // Reset tip and notes
+    tipAmount = 0;
+    document.getElementById('customTip').value = '';
+    document.getElementById('orderNotes').value = '';
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('selected'));
 
     // Show confirmation with order number
     lastOrderTime = Date.now();
@@ -1521,6 +1599,32 @@
   // Initialize EmailJS once at page load
   emailjs.init('7WVH18CE_A1tlxH4z');
 
+  // Supabase config
+  const SUPABASE_URL = 'https://dpnhxztmikomjwamobml.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_W6npYb_bQDwhSb-VYcf-sg_Vl7iYZyh';
+
+  async function saveOrderToSupabase(orderData) {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(orderData)
+      });
+      if (response.ok) {
+        console.log('Order saved to Supabase ✓');
+      } else {
+        console.log('Supabase error:', response.status);
+      }
+    } catch(e) {
+      console.log('Supabase save failed:', e);
+    }
+  }
+
   const OWNER_PASS_HASH = '335c4d929816ba4b5f35c9e1944d20970530c627430f8c7c6375f95d45c1f265';
   const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/6a3fcf94da38895dfe076f27';
   const JSONBIN_KEY = '$2a$10$9..3XAva0NLCS0EZH7k8W.ezt8f8j13J4Cwtte.sYVWJhTMeE1JgO';
@@ -1541,7 +1645,7 @@
         headers: { 'X-Master-Key': JSONBIN_KEY }
       });
       const data = await res.json();
-      return data.record.isOpen;
+      return data.record;
     } catch(e) { return null; }
   }
   let ownerUnlocked = false;
