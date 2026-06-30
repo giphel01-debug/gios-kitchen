@@ -227,6 +227,56 @@
     margin-bottom: 36px;
   }
 
+  /* NACHO CUSTOMIZATION */
+  .nacho-customize-toggle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    cursor: pointer;
+    margin-bottom: 12px;
+    user-select: none;
+  }
+
+  .nacho-options-panel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+
+  .nacho-section-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 8px;
+    margin-top: 12px;
+  }
+
+  .nacho-section-label:first-child { margin-top: 0; }
+
+  .topping-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--lightgray);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .topping-btn:hover { border-color: var(--green); color: var(--white); }
+
+  .topping-btn.selected {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--black);
+    font-weight: 700;
+  }
+
   /* SOLD OUT */
   .sold-out-badge {
     background: #ff4444;
@@ -922,7 +972,7 @@
       <div class="variants" id="pastel-variants">
         <button class="variant-btn" onclick="selectVariant('pastel', '🧀 Cheese', this, 2)">🧀 Cheese — $2</button>
         <button class="variant-btn" onclick="selectVariant('pastel', '🥩 Meat', this, 3)">🥩 Meat — $3</button>
-        <button class="variant-btn" onclick="selectVariant('pastel', '🐟 Tuna', this, 3)">🐟 Tuna — $3</button>
+        <button class="variant-btn" onclick="selectVariant('pastel', '🍗 Chicken', this, 3)">🍗 Chicken — $3</button>
       </div>
       <div class="item-footer">
         <div class="qty-control">
@@ -970,14 +1020,34 @@
         <div class="item-name">🧀 Nachos <span class="sold-out-badge" id="badge-nachos" style="display:none;">Sold Out</span></div>
         <div class="item-price">$4</div>
       </div>
-      <div class="item-desc">Chips, seasoned meat & melted cheese.</div>
+      <div class="item-desc">Chips, seasoned meat & melted cheese. Customize your toppings below.</div>
+
+      <div class="nacho-customize-toggle" onclick="toggleNachoOptions()">
+        <span id="nachoToggleText">Customize Toppings ▾</span>
+      </div>
+
+      <div class="nacho-options-panel" id="nachoOptionsPanel" style="display:none;">
+        <div class="nacho-section-label">Choose Chips (pick 1)</div>
+        <div class="variants">
+          <button class="variant-btn" onclick="selectNachoChip('🌽 Doritos', this)">🌽 Doritos</button>
+          <button class="variant-btn" onclick="selectNachoChip('🫓 Tortilla Chips', this)">🫓 Tortilla Chips</button>
+        </div>
+
+        <div class="nacho-section-label">Toppings (pick any)</div>
+        <div class="variants">
+          <button class="topping-btn" onclick="toggleNachoTopping('🍅 Pico de Gallo', this)">🍅 Pico de Gallo</button>
+          <button class="topping-btn" onclick="toggleNachoTopping('🌶️ Pepper', this)">🌶️ Pepper</button>
+          <button class="topping-btn" onclick="toggleNachoTopping('🥄 Sour Cream', this)">🥄 Sour Cream</button>
+        </div>
+      </div>
+
       <div class="item-footer">
         <div class="qty-control">
           <button class="qty-btn" onclick="changeQty('nachos', -1)">−</button>
           <div class="qty-num" id="nachos-qty">1</div>
           <button class="qty-btn" onclick="changeQty('nachos', 1)">+</button>
         </div>
-        <button class="add-btn" onclick="addToCart('nachos', 'Nachos', 4)">Add to Order</button>
+        <button class="add-btn" onclick="addNachosToCart()">Add to Order</button>
       </div>
     </div>
   </div>
@@ -989,16 +1059,30 @@
     <div class="item-card" id="card-chicken">
       <div class="item-header">
         <div class="item-name">🍗 Island Chicken Leg <span class="sold-out-badge" id="badge-chicken" style="display:none;">Sold Out</span></div>
-        <div class="item-price">$3.50</div>
+        <div class="item-price" id="chicken-price">$3.50</div>
       </div>
       <div class="item-desc">Tender oven-baked chicken leg seasoned with bold Caribbean herbs and spices, roasted until juicy and full of flavor.</div>
+
+      <div class="variant-label">Choose Style</div>
+      <div class="variants" id="chicken-variants">
+        <button class="variant-btn" onclick="selectVariant('chicken', 'Plain', this, 3.50)">Plain</button>
+        <button class="variant-btn" onclick="selectVariant('chicken', 'with Homemade Bread', this, 5)">🍞 With Homemade Bread — $5</button>
+      </div>
+
+      <div class="variant-label">Choose Dip (pick 1)</div>
+      <div class="variants" id="chicken-dip-variants">
+        <button class="variant-btn" onclick="selectChickenDip('Ranch', this)">Ranch</button>
+        <button class="variant-btn" onclick="selectChickenDip('Sweet Chili Sauce', this)">Sweet Chili Sauce</button>
+        <button class="variant-btn" onclick="selectChickenDip('BBQ Sauce', this)">BBQ Sauce</button>
+      </div>
+
       <div class="item-footer">
         <div class="qty-control">
           <button class="qty-btn" onclick="changeQty('chicken', -1)">−</button>
           <div class="qty-num" id="chicken-qty">1</div>
           <button class="qty-btn" onclick="changeQty('chicken', 1)">+</button>
         </div>
-        <button class="add-btn" onclick="addToCart('chicken', 'Island Chicken Leg', 3.50)">Add to Order</button>
+        <button class="add-btn" onclick="addChickenToCart()">Add to Order</button>
       </div>
     </div>
   </div>
@@ -1107,13 +1191,109 @@
   let qtys = { pastel: 1, golden: 1, nachos: 1, combo: 1, chicken: 1 };
   let selectedVariants = { pastel: null, golden: null };
 
-  let variantPrices = { pastel: 2, golden: 2 };
+  let variantPrices = { pastel: 2, golden: 2, chicken: 3.50 };
+
+  // Nacho customization state
+  let nachoChip = null;
+  let nachoToppings = [];
+
+  function toggleNachoOptions() {
+    const panel = document.getElementById('nachoOptionsPanel');
+    const text = document.getElementById('nachoToggleText');
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+    text.textContent = isOpen ? 'Customize Toppings ▾' : 'Customize Toppings ▴';
+  }
+
+  function selectNachoChip(chip, btn) {
+    nachoChip = chip;
+    const container = btn.parentElement;
+    container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function toggleNachoTopping(topping, btn) {
+    if (nachoToppings.includes(topping)) {
+      nachoToppings = nachoToppings.filter(t => t !== topping);
+      btn.classList.remove('selected');
+    } else {
+      nachoToppings.push(topping);
+      btn.classList.add('selected');
+    }
+    // Live price update
+    const priceEl = document.querySelector('#card-nachos .item-price');
+    if (priceEl) priceEl.textContent = nachoToppings.length >= 2 ? '$5' : '$4';
+  }
+
+  let chickenDip = null;
+
+  function selectChickenDip(dip, btn) {
+    chickenDip = dip;
+    const container = btn.parentElement;
+    container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function addChickenToCart() {
+    if (!selectedVariants['chicken']) {
+      showToast('Please choose plain or with bread!');
+      return;
+    }
+    const qty = qtys['chicken'];
+    const price = variantPrices['chicken'];
+    const label = chickenDip
+      ? `Island Chicken Leg (${selectedVariants['chicken']}, ${chickenDip})`
+      : `Island Chicken Leg (${selectedVariants['chicken']})`;
+
+    const existing = cart.find(c => c.label === label);
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      cart.push({ label, price, qty });
+    }
+
+    updateCartUI();
+    showToast('Added to order ✓');
+
+    qtys['chicken'] = 1;
+    document.getElementById('chicken-qty').textContent = 1;
+  }
+
+  function addNachosToCart() {
+    const qty = qtys['nachos'];
+    let label = 'Nachos';
+    const details = [];
+    if (nachoChip) details.push(nachoChip);
+    if (nachoToppings.length > 0) details.push(nachoToppings.join(', '));
+    if (details.length > 0) {
+      label = `Nachos (${details.join(' + ')})`;
+    }
+
+    // Multiple toppings (2+) = flat $5, otherwise $4
+    const price = nachoToppings.length >= 2 ? 5 : 4;
+
+    const existing = cart.find(c => c.label === label);
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      cart.push({ label, price, qty });
+    }
+
+    updateCartUI();
+    showToast('Added to order ✓');
+
+    qtys['nachos'] = 1;
+    document.getElementById('nachos-qty').textContent = 1;
+  }
 
   function selectVariant(item, variant, btn, price) {
     selectedVariants[item] = variant;
     variantPrices[item] = price;
-    const container = document.getElementById(item + '-variants');
-    container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+    // Use the button's own parent container instead of assuming an ID pattern
+    const container = btn.parentElement;
+    if (container) {
+      container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+    }
     btn.classList.add('selected');
     // Update price display
     const priceEl = document.getElementById(item + '-price');
@@ -1287,7 +1467,7 @@
 
     // Send customer receipt if they provided email
     if (email) {
-      emailjs.send('service_sjal2fj', 'template_awg64yi', {
+      emailjs.send('service_sjal2fj', 'template_k6d0xox', {
         customer_name: name,
         customer_contact: email,
         payment_method: payLabel,
